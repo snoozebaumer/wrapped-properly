@@ -27,10 +27,10 @@ class SpotifyHistoryAnalyzer:
                 data = [data]
 
             for record in data:
-                artist = record.get('master_metadata_album_artist_name')
-                song = f'{record.get("master_metadata_track_name")} - {artist}'
-                ms_played = record.get('ms_played', 0)
-                timestamp = record.get('ts')
+                artist = record.get('master_metadata_album_artist_name') or record.get('artistName')
+                song = f'{self._get_track_name(record)} - {artist}'
+                ms_played = record.get('ms_played') or record.get('msPlayed', 0)
+                timestamp = record.get('ts') or record.get('endTime')
 
                 if artist and song:
                     self.artist_streams[artist] += 1
@@ -89,3 +89,6 @@ class SpotifyHistoryAnalyzer:
             'earliest': None,
             'latest': None
         }
+
+    def _get_track_name(self, record):
+        return record.get("master_metadata_track_name") or record.get("trackName")
