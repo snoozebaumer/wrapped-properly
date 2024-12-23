@@ -6,7 +6,7 @@ An all-time or year-end streaming data analyzer, inspired by the lack of transpa
 - [x] Top played artists by streams
 - [x] Top played artists by listening time
 - [x] Top played songs by streams
-- [ ] Top played songs by listening time
+- [x] Top played songs by listening time
 - [ ] Top genres (has to be scraped prolly)
 - [x] Unique artists
 - [x] Total listening time

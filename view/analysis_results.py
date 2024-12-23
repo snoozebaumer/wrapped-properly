@@ -55,6 +55,15 @@ def build_analysis_results_page(analyzer: SpotifyHistoryAnalyzer):
                         ui.label(f"{rank}. {song}").classes("flex-grow")
                         ui.badge(f'{count} streams', color="accent")
 
+            # Top Songs by Listening Time
+            with ui.card().classes(CARD_CSS_CLASS):
+                ui.label("Top Songs (by Listening Time)").classes(SUB_TITLE_CSS_CLASS)
+                top_songs_time = analyzer.get_song_playtime(10)
+                for rank, (song, hours) in enumerate(top_songs_time, 1):
+                    with ui.row().classes(STATS_ROW_CSS_CLASS):
+                        ui.label(f"{rank}. {song}").classes("flex-grow")
+                        ui.badge(f"{hours} h", color="secondary")
+
             # Processed Files
             with ui.expansion("Processed Files").classes(CARD_CSS_CLASS):
                 for file in summary.processed_files:

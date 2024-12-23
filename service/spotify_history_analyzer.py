@@ -14,6 +14,7 @@ class SpotifyHistoryAnalyzer:
         self.artist_streams = Counter()
         self.song_streams = Counter()
         self.artist_total_playtime = Counter()
+        self.song_total_playtime = Counter()
 
         # additional tracking
         self.total_streams = 0
@@ -70,6 +71,11 @@ class SpotifyHistoryAnalyzer:
         milliseconds_in_an_hour = 3600000
         return [(artist, round(playtime / milliseconds_in_an_hour, 1))
                 for artist, playtime in self.artist_total_playtime.most_common(n)]
+
+    def get_song_playtime(self, n=10):
+        milliseconds_in_an_hour = 3600000
+        return [(song, round(playtime / milliseconds_in_an_hour, 1))
+                for song, playtime in self.song_total_playtime.most_common(n)]
 
     def get_summary(self):
         return Summary.from_source(
