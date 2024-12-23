@@ -48,10 +48,8 @@ class SpotifyHistoryAnalyzer:
                 if timestamp:
                     try:
                         parsed_ts = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                        if (not self.date_range.earliest) or (parsed_ts < self.date_range.earliest):
-                            self.date_range.earliest = parsed_ts
-                        if (not self.date_range.latest) or (parsed_ts > self.date_range.latest):
-                            self.date_range.latest = parsed_ts
+                        self._check_if_new_earliest_date(parsed_ts)
+                        self._check_if_new_latest_date(parsed_ts)
                     except ValueError:
                         pass
 
@@ -60,6 +58,14 @@ class SpotifyHistoryAnalyzer:
             return len(data)
         except json.JSONDecodeError as e:
             raise ValueError(f"JSON decode error in {filename}: {str(e)}")
+
+    def _check_if_new_earliest_date(self, parsed_ts):
+        if (not self.date_range.earliest) or (parsed_ts < self.date_range.earliest):
+            self.date_range.earliest = parsed_ts
+
+    def _check_if_new_latest_date(self, parsed_ts):
+        if (not self.date_range.latest) or (parsed_ts > self.date_range.latest):
+            self.date_range.latest = parsed_ts
 
     def get_top_artists(self, n=10):
         return self.artist_streams.most_common(n)
