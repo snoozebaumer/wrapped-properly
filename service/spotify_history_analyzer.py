@@ -2,6 +2,11 @@ import json
 from collections import Counter
 from datetime import datetime
 
+from models.date_range import DateRange
+from models.summary import Summary
+from service.json_utils import get_spotify_artist_name, get_spotify_track_name, get_spotify_ms_played, \
+    get_spotify_timestamp
+
 
 class SpotifyHistoryAnalyzer:
     def __init__(self):
@@ -10,14 +15,11 @@ class SpotifyHistoryAnalyzer:
         self.song_streams = Counter()
         self.artist_total_playtime = Counter()
 
-        # Additional tracking
+        # additional tracking
         self.total_streams = 0
         self.total_playtime_minutes = 0
         self.processed_files = []
-        self.date_range = {
-            'earliest': None,
-            'latest': None
-        }
+        self.date_range = DateRange()
 
     def process_file(self, filename: str, file_content: str):
         try:
@@ -27,16 +29,17 @@ class SpotifyHistoryAnalyzer:
                 data = [data]
 
             for record in data:
-                artist = record.get('master_metadata_album_artist_name') or record.get('artistName')
-                song = f'{self._get_track_name(record)} - {artist}'
-                ms_played = record.get('ms_played') or record.get('msPlayed', 0)
-                timestamp = record.get('ts') or record.get('endTime')
+                artist = get_spotify_artist_name(record)
+                song = f'{get_spotify_track_name(record)} - {artist}'
+                ms_played = get_spotify_ms_played(record)
+                timestamp = get_spotify_timestamp(record)
 
                 if artist and song:
                     self.artist_streams[artist] += 1
                     self.song_streams[song] += 1
 
                     self.artist_total_playtime[artist] += ms_played
+                    self.song_total_playtime[song] += ms_played
                     self.total_playtime_minutes += ms_played / 60000  # convert to minutes
 
                     self.total_streams += 1
@@ -44,10 +47,10 @@ class SpotifyHistoryAnalyzer:
                 if timestamp:
                     try:
                         parsed_ts = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                        if (not self.date_range['earliest']) or (parsed_ts < self.date_range['earliest']):
-                            self.date_range['earliest'] = parsed_ts
-                        if (not self.date_range['latest']) or (parsed_ts > self.date_range['latest']):
-                            self.date_range['latest'] = parsed_ts
+                        if (not self.date_range.earliest) or (parsed_ts < self.date_range.earliest):
+                            self.date_range.earliest = parsed_ts
+                        if (not self.date_range.latest) or (parsed_ts > self.date_range.latest):
+                            self.date_range.latest = parsed_ts
                     except ValueError:
                         pass
 
@@ -69,14 +72,13 @@ class SpotifyHistoryAnalyzer:
                 for artist, playtime in self.artist_total_playtime.most_common(n)]
 
     def get_summary(self):
-        return {
-            'total_streams': self.total_streams,
-            'total_playtime_hours': round(self.total_playtime_minutes / 60, 2),
-            'unique_artists': len(self.artist_streams),
-            'unique_songs': len(self.song_streams),
-            'processed_files': self.processed_files,
-            'date_range': self.date_range
-        }
+        return Summary.from_source(
+            total_streams=self.total_streams,
+            total_playtime_minutes=self.total_playtime_minutes,
+            artist_streams=self.artist_streams,
+            song_streams=self.song_streams,
+            processed_files=self.processed_files,
+            date_range=self.date_range)
 
     def clear(self):
         self.artist_streams.clear()
@@ -85,10 +87,4 @@ class SpotifyHistoryAnalyzer:
         self.total_streams = 0
         self.total_playtime_minutes = 0
         self.processed_files.clear()
-        self.date_range = {
-            'earliest': None,
-            'latest': None
-        }
-
-    def _get_track_name(self, record):
-        return record.get("master_metadata_track_name") or record.get("trackName")
+        self.date_range = DateRange()
